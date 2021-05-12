@@ -19,22 +19,40 @@
 
         <% if (username) {%>
         <a style="color: black" class="nav-item nav-link"
-          >Welcome <%=username%></a
+          >Welcome <%=users[username].email%></a
         >
         <form method="POST" action="/logout">
           <input type="submit" class="btn-danger" value="logout" />
         </form>
         <%} else {%>
-        <form method="POST" action="/login">
+
+        <form method="GET" action="/register">
           <input
-            type="text"
-            name="username"
-            placeholder="Enter username"
-            value=""
+            style="margin-top: 0.3rem"
+            type="submit"
+            class="btn-secondary"
+            value="Register"
           />
-          <input type="submit" class="btn-primary" value="login" />
-          <% }%>
         </form>
+        <p
+          style="
+            margin-top: 0.3rem;
+            margin-left: 0.3rem;
+            padding: 2px;
+            color: white;
+          "
+        >
+          Already a user?, please click here to login
+        </p>
+        <form method="GET" action="/login">
+          <input
+            style="margin-top: 0.3rem"
+            type="submit"
+            class="btn-primary"
+            value="login"
+          />
+        </form>
+        <% }%>
       </div>
     </div>
   </nav>
