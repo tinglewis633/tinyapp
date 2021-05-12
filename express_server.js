@@ -56,8 +56,25 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { username } = req.body;
-  res.cookie("username", username);
+  const { email, password } = req.body;
+  if (email === "" || password === "") {
+    return res.status(400).json({
+      error:
+        "Please dont leave password or email black, click the back arrow on the left top corner to re-register",
+    });
+  }
+
+  for (const user in users) {
+    if (users[user].email === email && users[user].password === password) {
+      res.cookie("user_id", users[user].id);
+      console.log("LOGIN SUCCESS");
+    } else
+      return res.status(400).json({
+        error:
+          "Invalid Credentials, click the back arrow on the left top corner to login again",
+      });
+  }
+
   res.redirect(301, `/urls`);
 });
 
