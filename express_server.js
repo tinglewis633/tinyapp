@@ -11,8 +11,8 @@ function generateRandomString() {
 }
 app.set("view engine", "ejs");
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" },
 };
 
 const users = {
@@ -30,52 +30,6 @@ const users = {
 
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-app.get("/urls", (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    username: req.cookies["user_id"],
-    users,
-  };
-  res.render("urls_index", templateVars);
-});
-
-app.post("/urls", (req, res) => {
-  let result = generateRandomString();
-  urlDatabase[result] = req.body.longURL;
-  res.redirect(301, `/urls/`);
-});
-
-app.get("/login", (req, res) => {
-  const templateVars = {
-    username: req.cookies["user_id"],
-    users,
-  };
-  res.render("urls_login", templateVars);
-});
-
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  if (email === "" || password === "") {
-    return res.status(400).json({
-      error:
-        "Please dont leave password or email black, click the back arrow on the left top corner to re-register",
-    });
-  }
-
-  for (const user in users) {
-    if (users[user].email === email && users[user].password === password) {
-      res.cookie("user_id", users[user].id);
-      console.log("LOGIN SUCCESS");
-    } else
-      return res.status(400).json({
-        error:
-          "Invalid Credentials, click the back arrow on the left top corner to login again",
-      });
-  }
-
-  res.redirect(301, `/urls`);
 });
 
 app.get("/register", (req, res) => {
@@ -116,21 +70,62 @@ app.post("/register", (req, res) => {
   res.redirect(301, `/urls`);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = {
+    username: req.cookies["user_id"],
+    users,
+  };
+  res.render("urls_login", templateVars);
+});
+
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  if (email === "" || password === "") {
+    return res.status(400).json({
+      error:
+        "Please dont leave password or email black, click the back arrow on the left top corner to try login again ",
+    });
+  }
+
+  for (const user in users) {
+    if (users[user].email === email && users[user].password === password) {
+      res.cookie("user_id", users[user].id);
+      res.redirect(301, `/urls`);
+      return;
+    }
+  }
+
+  res.status(400).json({
+    error:
+      "Invalid Credentials,click the back arrow on the left top corner to try login again ",
+  });
+});
+
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   console.log(users);
   res.redirect(301, `/urls`);
 });
 
-app.get("/urls/new", (req, res) => {
+app.get("/urls", (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["user_id"],
+    users,
+  };
+  res.render("urls_index", templateVars);
+});
+
+app.get("/new", (req, res) => {
   const templateVars = {
     username: req.cookies["user_id"],
     users,
   };
-
   const username = req.cookies["user_id"];
-  console.log(users);
-  console.log(username);
+  if (!username) {
+    res.redirect("/login");
+    return;
+  }
 
   res.render("urls_new", templateVars);
 });
@@ -138,32 +133,52 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     username: req.cookies["user_id"],
     users,
   };
+  console.log("hit me");
   res.render("urls_show", templateVars);
 });
-
-app.post("/urls/:shortURL", (req, res) => {
+app.post("/urls/:id", (req, res) => {
+  let username = req.cookies["user_id"];
+  if (username === urlDatabase[shortURL].userID) {
+    const shortURL = req.params.id;
+    const longURL = req.body.longURL;
+    urlDatabase[shortURL].longURL = longURL;
+    res.redirect("/urls");
+  }
+});
+app.post("/urls", (req, res) => {
+  let result = generateRandomString();
+  let username = req.cookies["user_id"];
+  urlDatabase[result] = {};
+  urlDatabase[result].longURL = req.body.longURL;
+  urlDatabase[result].userID = username;
+  console.log(urlDatabase);
+  res.redirect(301, `/urls/`);
+});
+app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
-  const { longURL } = req.body;
-  urlDatabase[shortURL] = longURL;
+  let username = req.cookies["user_id"];
+  if (username === urlDatabase[shortURL].userID) {
+    delete urlDatabase[shortURL];
+  }
+  console.log(urlDatabase);
+  console.log(username);
   res.redirect("/urls");
 });
-
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const { shortURL } = req.params;
-
-  delete urlDatabase[shortURL];
-
-  res.redirect("/urls");
-});
+// app.post("/urls/:shortURL", (req, res) => {
+//   const { shortURL } = req.params;
+//   const { longURL } = req.body;
+//   urlDatabase[shortURL] = longURL;
+//   res.redirect("/urls");
+// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
