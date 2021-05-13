@@ -6,6 +6,9 @@ const cookieParser = require("cookie-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
 function generateRandomString() {
   return Math.random().toString(36).substring(7, 15);
 }
@@ -59,12 +62,13 @@ app.post("/register", (req, res) => {
       });
     }
   }
-  let id = generateRandomString();
+  const id = generateRandomString();
   users[id] = {
     id,
     email,
-    password,
+    password: bcrypt.hashSync(password, saltRounds),
   };
+
   res.cookie("user_id", id);
   console.log(users);
   res.redirect(301, `/urls`);
@@ -88,7 +92,10 @@ app.post("/login", (req, res) => {
   }
 
   for (const user in users) {
-    if (users[user].email === email && users[user].password === password) {
+    if (
+      users[user].email === email &&
+      bcrypt.compareSync(password, users[user].password)
+    ) {
       res.cookie("user_id", users[user].id);
       res.redirect(301, `/urls`);
       return;
@@ -141,17 +148,19 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 app.post("/urls/:id", (req, res) => {
-  let username = req.cookies["user_id"];
+  const shortURL = req.params.id;
+  const username = req.cookies["user_id"];
   if (username === urlDatabase[shortURL].userID) {
-    const shortURL = req.params.id;
+    console.log(username);
+    console.log(urlDatabase[shortURL].userID);
     const longURL = req.body.longURL;
     urlDatabase[shortURL].longURL = longURL;
     res.redirect("/urls");
   }
 });
 app.post("/urls", (req, res) => {
-  let result = generateRandomString();
-  let username = req.cookies["user_id"];
+  const result = generateRandomString();
+  const username = req.cookies["user_id"];
   urlDatabase[result] = {};
   urlDatabase[result].longURL = req.body.longURL;
   urlDatabase[result].userID = username;
@@ -160,7 +169,7 @@ app.post("/urls", (req, res) => {
 });
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
-  let username = req.cookies["user_id"];
+  const username = req.cookies["user_id"];
   if (username === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
   }
