@@ -2,9 +2,17 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+
+const cookieSession = require("cookie-session");
+
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
@@ -22,12 +30,12 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", saltRounds),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk", saltRounds),
   },
 };
 
@@ -37,7 +45,7 @@ app.get("/", (req, res) => {
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    username: req.cookies["user_id"],
+    username: req.session["user_id"],
     users,
   };
   res.render("urls_register", templateVars);
@@ -69,14 +77,14 @@ app.post("/register", (req, res) => {
     password: bcrypt.hashSync(password, saltRounds),
   };
 
-  res.cookie("user_id", id);
+  req.session["user_id"] = id;
   console.log(users);
   res.redirect(301, `/urls`);
 });
 
 app.get("/login", (req, res) => {
   const templateVars = {
-    username: req.cookies["user_id"],
+    username: req.session["user_id"],
     users,
   };
   res.render("urls_login", templateVars);
@@ -96,7 +104,7 @@ app.post("/login", (req, res) => {
       users[user].email === email &&
       bcrypt.compareSync(password, users[user].password)
     ) {
-      res.cookie("user_id", users[user].id);
+      req.session["user_id"] = users[user].id;
       res.redirect(301, `/urls`);
       return;
     }
@@ -109,7 +117,8 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie("session.sig");
+  res.clearCookie("session");
   console.log(users);
   res.redirect(301, `/urls`);
 });
@@ -117,7 +126,7 @@ app.post("/logout", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["user_id"],
+    username: req.session["user_id"],
     users,
   };
   res.render("urls_index", templateVars);
@@ -125,10 +134,10 @@ app.get("/urls", (req, res) => {
 
 app.get("/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["user_id"],
+    username: req.session["user_id"],
     users,
   };
-  const username = req.cookies["user_id"];
+  const username = req.session["user_id"];
   if (!username) {
     res.redirect("/login");
     return;
@@ -141,7 +150,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
-    username: req.cookies["user_id"],
+    username: req.session["user_id"],
     users,
   };
   console.log("hit me");
@@ -149,7 +158,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  const username = req.cookies["user_id"];
+  const username = req.session["user_id"];
   if (username === urlDatabase[shortURL].userID) {
     console.log(username);
     console.log(urlDatabase[shortURL].userID);
@@ -160,7 +169,7 @@ app.post("/urls/:id", (req, res) => {
 });
 app.post("/urls", (req, res) => {
   const result = generateRandomString();
-  const username = req.cookies["user_id"];
+  const username = req.session["user_id"];
   urlDatabase[result] = {};
   urlDatabase[result].longURL = req.body.longURL;
   urlDatabase[result].userID = username;
@@ -169,7 +178,7 @@ app.post("/urls", (req, res) => {
 });
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
-  const username = req.cookies["user_id"];
+  const username = req.session["user_id"];
   if (username === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
   }
