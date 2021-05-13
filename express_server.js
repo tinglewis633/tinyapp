@@ -129,6 +129,7 @@ app.get("/urls", (req, res) => {
     username: req.session["user_id"],
     users,
   };
+  console.log(urlDatabase);
   res.render("urls_index", templateVars);
 });
 
@@ -187,7 +188,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  console.log(longURL);
   res.redirect(longURL);
 });
 
