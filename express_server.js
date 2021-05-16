@@ -54,6 +54,12 @@ app.get("/register", (req, res) => {
     username: req.session["user_id"],
     users,
   };
+  const username = req.session["user_id"];
+  if (username) {
+    res.redirect("/urls");
+    return;
+  }
+
   res.render("urls_register", templateVars);
 });
 ////////////
@@ -169,11 +175,12 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
+
   const username = req.session["user_id"];
   if (username === urlDatabase[shortURL].userID) {
     const longURL = req.body.longURL;
     urlDatabase[shortURL].longURL = longURL;
-    res.redirect("/urls");
+    res.redirect(`/urls/`);
   }
 });
 app.post("/urls", (req, res) => {
@@ -199,13 +206,6 @@ app.get("/u/:shortURL", (req, res) => {
 
   res.redirect(longURL);
 });
-
-// app.post("/urls/:shortURL", (req, res) => {
-//   const { shortURL } = req.params;
-//   const { longURL } = req.body;
-//   urlDatabase[shortURL] = longURL;
-//   res.redirect("/urls");
-// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
