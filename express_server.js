@@ -189,6 +189,10 @@ app.post("/urls/:id", (req, res) => {
     const longURL = req.body.longURL;
     urlDatabase[shortURL].longURL = longURL;
     res.redirect(`/urls/`);
+  } else {
+    res.status(400).json({
+      error: "You do not have access to this",
+    });
   }
 });
 
