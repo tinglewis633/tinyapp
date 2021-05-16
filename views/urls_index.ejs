@@ -31,6 +31,7 @@
           </tr>
         </thead>
         <tbody>
+          <!--only show URL belong to that user-->
           <% for(let url in urls) { %> <% if (urls[url].userID === username) {%>
 
           <tr>
