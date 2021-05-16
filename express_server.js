@@ -191,7 +191,7 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
-//Generat new URL in db
+//Generat new URL in db and redirect them to /urls/:id
 app.post("/urls", (req, res) => {
   const result = generateRandomString();
   const username = req.session["user_id"];
@@ -199,7 +199,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[result].longURL = req.body.longURL;
   urlDatabase[result].userID = username;
 
-  res.redirect(301, `/urls/`);
+  res.redirect(`/urls/${result}`);
 });
 
 //let user delete existing URL and redirect them to home page
