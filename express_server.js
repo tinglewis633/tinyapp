@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 
 const bcrypt = require("bcrypt");
+const e = require("express");
 const saltRounds = 10;
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -208,6 +209,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const username = req.session["user_id"];
   if (username === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
+  } else {
+    res.status(400).json({
+      error: "You do not have access to this",
+    });
   }
 
   res.redirect("/urls");
