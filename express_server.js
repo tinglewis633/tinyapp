@@ -2,30 +2,14 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-
 const cookieSession = require("cookie-session");
-
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(
-  cookieSession({
-    name: "session",
-    keys: ["key1", "key2"],
-  })
-);
 
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
-
-function generateRandomString() {
-  return Math.random().toString(36).substring(7, 15);
-}
-app.set("view engine", "ejs");
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" },
 };
-
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -39,6 +23,19 @@ const users = {
   },
 };
 
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
+
+function generateRandomString() {
+  return Math.random().toString(36).substring(7, 15);
+}
+
 app.get("/", (req, res) => {
   const username = req.session["user_id"];
   if (username) {
@@ -49,6 +46,7 @@ app.get("/", (req, res) => {
   res.redirect("/login");
 });
 
+// Send user to the register page when register is clicked
 app.get("/register", (req, res) => {
   const templateVars = {
     username: req.session["user_id"],
@@ -62,7 +60,8 @@ app.get("/register", (req, res) => {
 
   res.render("urls_register", templateVars);
 });
-////////////
+
+//Generate new user in db
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
   if (email === "" || password === "") {
@@ -92,6 +91,7 @@ app.post("/register", (req, res) => {
   res.redirect(301, `/urls`);
 });
 
+//direct user to login page
 app.get("/login", (req, res) => {
   const username = req.session["user_id"];
   if (username) {
@@ -105,6 +105,7 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+//check if user exist, if it does log him/her in
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -132,6 +133,7 @@ app.post("/login", (req, res) => {
   });
 });
 
+//log users out delete cookies
 app.post("/logout", (req, res) => {
   res.clearCookie("session.sig");
   res.clearCookie("session");
@@ -139,6 +141,7 @@ app.post("/logout", (req, res) => {
   res.redirect(301, `/urls`);
 });
 
+//render out all the urls for the user
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -149,6 +152,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//direct users to generate new shortURL page
 app.get("/new", (req, res) => {
   const templateVars = {
     username: req.session["user_id"],
@@ -163,6 +167,7 @@ app.get("/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+//direct user to the edit URL page
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -173,6 +178,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
   res.render("urls_show", templateVars);
 });
+
+//edited URL and bring users back to home page
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
 
@@ -183,6 +190,8 @@ app.post("/urls/:id", (req, res) => {
     res.redirect(`/urls/`);
   }
 });
+
+//Generat new URL in db
 app.post("/urls", (req, res) => {
   const result = generateRandomString();
   const username = req.session["user_id"];
@@ -192,6 +201,8 @@ app.post("/urls", (req, res) => {
 
   res.redirect(301, `/urls/`);
 });
+
+//let user delete existing URL and redirect them to home page
 app.post("/urls/:shortURL/delete", (req, res) => {
   const { shortURL } = req.params;
   const username = req.session["user_id"];
@@ -201,6 +212,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
   res.redirect("/urls");
 });
+
+//redirect shortURL to longURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
