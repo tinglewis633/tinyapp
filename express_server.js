@@ -37,6 +37,7 @@ app.use(
   })
 );
 
+// Redirect user to their urls page, non-user to login
 app.get("/", (req, res) => {
   const username = req.session["user_id"];
   if (username) {
@@ -66,17 +67,19 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
   if (checkEmptyInput(email, password)) {
-    res.status(400).json({
-      error:
-        "Please dont leave password or email black, click the back arrow on the left top corner to try login again ",
-    });
+    res
+      .status(400)
+      .send(
+        `<h1>Please dont leave password or email black, click the back arrow on the left top corner to try login again</h1> `
+      );
   }
 
   if (checkEmail(email, users)) {
-    return res.status(400).json({
-      error:
-        "User Already exist, please click the back arrow on the left top corner to re-register",
-    });
+    return res
+      .status(400)
+      .send(
+        `<h1>User Already exist, please click the back arrow on the left top corner to re-register</h1> `
+      );
   }
 
   const id = generateRandomString();
@@ -110,10 +113,11 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   if (checkEmptyInput(email, password)) {
-    res.status(400).json({
-      error:
-        "Please dont leave password or email black, click the back arrow on the left top corner to try login again ",
-    });
+    res
+      .status(400)
+      .send(
+        `<h1>Please dont leave password or email black, click the back arrow on the left top corner to try login again</h1> `
+      );
   }
 
   for (const user in users) {
@@ -127,10 +131,11 @@ app.post("/login", (req, res) => {
     }
   }
 
-  res.status(400).json({
-    error:
-      "Invalid Credentials,click the back arrow on the left top corner to try login again ",
-  });
+  res
+    .status(400)
+    .send(
+      `<h1>Invalid Credentials,click the back arrow on the left top corner to try login again</h1> `
+    );
 });
 
 //log users out delete cookies
@@ -138,16 +143,16 @@ app.post("/logout", (req, res) => {
   res.clearCookie("session.sig");
   res.clearCookie("session");
 
-  res.redirect(301, `/urls`);
+  res.redirect(301, `/`);
 });
 
 //render out all the urls for the user
 app.get("/urls", (req, res) => {
   const username = req.session["user_id"];
   if (!username) {
-    res.status(400).json({
-      error: "You do not have access to this",
-    });
+    res
+      .status(400)
+      .send(`<h1>You do not have access to this, please register first</h1>`);
     return;
   }
   const templateVars = {
@@ -176,6 +181,11 @@ app.get("/new", (req, res) => {
 
 //direct user to the edit URL page
 app.get("/urls/:shortURL", (req, res) => {
+  const username = req.session["user_id"];
+  if (!username) {
+    res.status(400).send(`<h1>You do not have access to this</h1> `);
+    return;
+  }
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL].longURL,
@@ -192,19 +202,12 @@ app.post("/urls/:id", (req, res) => {
 
   const username = req.session["user_id"];
   if (!username) {
-    res.status(400).json({
-      error: "You do not have access to this",
-    });
-    return;
+    return res.status(400).send(`<h1>You do not have access to this</h1> `);
   }
   if (username === urlDatabase[shortURL].userID) {
     const longURL = req.body.longURL;
     urlDatabase[shortURL].longURL = longURL;
     res.redirect(`/urls/`);
-  } else {
-    res.status(400).json({
-      error: "You do not have access to this",
-    });
   }
 });
 
@@ -226,9 +229,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   if (username === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
   } else {
-    res.status(400).json({
-      error: "You do not have access to this",
-    });
+    res.status(400).send(`<h1>You do not have access to this</h1> `);
   }
 
   res.redirect("/urls");
