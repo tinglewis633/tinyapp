@@ -3,9 +3,13 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
+const {
+  generateRandomString,
+  checkEmptyInput,
+  checkEmail,
+} = require("./helper");
 
 const bcrypt = require("bcrypt");
-const e = require("express");
 const saltRounds = 10;
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -32,10 +36,6 @@ app.use(
     keys: ["key1", "key2"],
   })
 );
-
-function generateRandomString() {
-  return Math.random().toString(36).substring(7, 15);
-}
 
 app.get("/", (req, res) => {
   const username = req.session["user_id"];
@@ -65,21 +65,20 @@ app.get("/register", (req, res) => {
 //Generate new user in db
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  if (email === "" || password === "") {
-    return res.status(400).json({
+  if (checkEmptyInput(email, password)) {
+    res.status(400).json({
       error:
-        "Please dont leave password or email black, click the back arrow on the left top corner to re-register",
+        "Please dont leave password or email black, click the back arrow on the left top corner to try login again ",
     });
   }
 
-  for (const user in users) {
-    if (users[user].email === email) {
-      return res.status(400).json({
-        error:
-          "User Already exist, please click the back arrow on the left top corner to re-register",
-      });
-    }
+  if (checkEmail(email, users)) {
+    return res.status(400).json({
+      error:
+        "User Already exist, please click the back arrow on the left top corner to re-register",
+    });
   }
+
   const id = generateRandomString();
   users[id] = {
     id,
@@ -110,8 +109,8 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  if (email === "" || password === "") {
-    return res.status(400).json({
+  if (checkEmptyInput(email, password)) {
+    res.status(400).json({
       error:
         "Please dont leave password or email black, click the back arrow on the left top corner to try login again ",
     });
