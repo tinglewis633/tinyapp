@@ -143,6 +143,13 @@ app.post("/logout", (req, res) => {
 
 //render out all the urls for the user
 app.get("/urls", (req, res) => {
+  const username = req.session["user_id"];
+  if (!username) {
+    res.status(400).json({
+      error: "You do not have access to this",
+    });
+    return;
+  }
   const templateVars = {
     urls: urlDatabase,
     username: req.session["user_id"],
@@ -184,6 +191,12 @@ app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
 
   const username = req.session["user_id"];
+  if (!username) {
+    res.status(400).json({
+      error: "You do not have access to this",
+    });
+    return;
+  }
   if (username === urlDatabase[shortURL].userID) {
     const longURL = req.body.longURL;
     urlDatabase[shortURL].longURL = longURL;
